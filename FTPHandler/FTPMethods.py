@@ -1,6 +1,7 @@
 from ftplib import FTP
 import configparser 
 import os
+from time import sleep
 from pathlib import Path
 
 from collections import defaultdict
@@ -107,19 +108,20 @@ def doOverFTP(f):
         filenames = ftp.nlst() # get filenames within the directory
         for filename in filenames:
             if not trie.search(filename):
+                local_filename=os.path.join(images_path, filename)
                 try:
                     already_processed.append(filename)
-                    local_filename=os.path.join(images_path, filename)
-                    file = open(local_filename, 'wb')
-                    ftp.retrbinary('RETR '+ filename, file.write)
-                    file.close
+                    with open(local_filename, 'wb') as file:
+                        ftp.retrbinary('RETR '+ filename, file.write)
                     f(local_filename)
                     trie.insert(filename)
                 except: 
+                    os.remove(local_filename)
                     print(f"File {filename} is not yet available to download")
         if config['watch']=="false":
             print("Not watching: exiting")
             break
+        sleep(5)
 
     
 
